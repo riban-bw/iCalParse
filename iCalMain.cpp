@@ -125,6 +125,9 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
     size_t nLineCount = icsFile.GetLineCount();
     size_t nEventCount = 0;
         m_pLstLog->AppendAndEnsureVisible(wxString::Format("Opened file with %d lines", nLineCount));
+
+    //!@todo Move parsing to separate function?
+    //Find start of calendar block
     wxString sLine = icsFile.GetFirstLine();
     while(!icsFile.Eof() && sLine != "BEGIN:VCALENDAR")
           sLine = icsFile.GetNextLine();
@@ -135,17 +138,20 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
     }
     m_pLstLog->AppendAndEnsureVisible("Found calendar section");
 
+    //Parse each line of file until end of calendar block
     for(; !icsFile.Eof(); sLine = icsFile.GetNextLine())
     {
         if(sLine == "END:VCALENDAR")
         {
+            //Found end of calendar block. Need to do something with it...
             m_pLstLog->AppendAndEnsureVisible("End of calendar section");
             return;
         }
-        if(sLine.Left(8) == "VERSION:")
+        if(sLine.Left(8) == "VERSION:") //Don't really care about calendar version
             m_pLstLog->AppendAndEnsureVisible(wxString::Format("Version: %s", sLine.Mid(8)));
         if(sLine == "BEGIN:VEVENT")
         {
+            //Found a calendar event. Parse each line of the event
             EVENT_PROPERTY nLastProperty = EVENT_NONE;
             wxString sSummary;
             wxString sLocation;
@@ -157,61 +163,60 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
             long lRecurCount = 0; //quantity of recurrances
             long lRecurDays = 0; //bitwise flag of recurrance days
             EVENT_RECUR_FREQ nRecurFreq = RECUR_NONE;
-            //Found event
-            if(sLine.Left(5) == "RRULE")
-            {
-                //Recur rule
-                wxStringTokenizer stParams(sLine.AfterFirst(':'), ";");
-                while(stParams.HasMoreTokens())
-                {
-                    wxString sToken = stParams.GetNextToken();
-                    wxString sParam = sToken.BeforeFirst('=');
-                    wxString sValue = sToken.AfterFirst('=');
-                    if(sParam == "FREQ")
-                    {
-                        if(sValue == "DAILY")
-                            nRecurFreq = RECUR_DAILY;
-                        if(sValue == "WEEKLY")
-                            nRecurFreq = RECUR_WEEKLY;
-                        if(sValue == "MONTHLY")
-                            nRecurFreq = RECUR_MONTHLY;
-                        if(sValue == "YEARLY")
-                            nRecurFreq = RECUR_YEARLY;
-                    }
-                    else if(sParam == "COUNT")
-                    {
-                        sValue.ToLong(&lRecurCount);
-                    }
-                    else if(sParam == "BYDAY")
-                    {
-                        if(sValue.Contains("SU"))
-                            lRecurDays += 1;
-                        if(sValue.Contains("MO"))
-                            lRecurDays += 2;
-                        if(sValue.Contains("TU"))
-                            lRecurDays += 4;
-                        if(sValue.Contains("WE"))
-                            lRecurDays += 8;
-                        if(sValue.Contains("TH"))
-                            lRecurDays += 16;
-                        if(sValue.Contains("FR"))
-                            lRecurDays += 32;
-                        if(sValue.Contains("SA"))
-                            lRecurDays += 64;
-                    }
-                    else if(sParam == "BYMONTHDAY")
-                    {
-                        //!@todo Implement
-                    }
-                    else if(sParam == "BYMONTH")
-                    {
-                        //!@todo Implement
-                    }
-                }
-            }
             while (!icsFile.Eof() && sLine != "END:VEVENT")
             {
                 sLine = icsFile.GetNextLine();
+                if(sLine.Left(5) == "RRULE")
+                {
+                    //Recur rule
+                    wxStringTokenizer stParams(sLine.AfterFirst(':'), ";");
+                    while(stParams.HasMoreTokens())
+                    {
+                        wxString sToken = stParams.GetNextToken();
+                        wxString sParam = sToken.BeforeFirst('=');
+                        wxString sValue = sToken.AfterFirst('=');
+                        if(sParam == "FREQ")
+                        {
+                            if(sValue == "DAILY")
+                                nRecurFreq = RECUR_DAILY;
+                            if(sValue == "WEEKLY")
+                                nRecurFreq = RECUR_WEEKLY;
+                            if(sValue == "MONTHLY")
+                                nRecurFreq = RECUR_MONTHLY;
+                            if(sValue == "YEARLY")
+                                nRecurFreq = RECUR_YEARLY;
+                        }
+                        else if(sParam == "COUNT")
+                        {
+                            sValue.ToLong(&lRecurCount);
+                        }
+                        else if(sParam == "BYDAY")
+                        {
+                            if(sValue.Contains("SU"))
+                                lRecurDays += 1;
+                            if(sValue.Contains("MO"))
+                                lRecurDays += 2;
+                            if(sValue.Contains("TU"))
+                                lRecurDays += 4;
+                            if(sValue.Contains("WE"))
+                                lRecurDays += 8;
+                            if(sValue.Contains("TH"))
+                                lRecurDays += 16;
+                            if(sValue.Contains("FR"))
+                                lRecurDays += 32;
+                            if(sValue.Contains("SA"))
+                                lRecurDays += 64;
+                        }
+                        else if(sParam == "BYMONTHDAY")
+                        {
+                            //!@todo Implement
+                        }
+                        else if(sParam == "BYMONTH")
+                        {
+                            //!@todo Implement
+                        }
+                    }
+                }
                 if(sLine.Left(5) == "BEGIN")
                 {
                     while(!icsFile.Eof() && sLine.Left(3) != "END")
@@ -288,7 +293,7 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
             }
             if(bSuccess)
             {
-                m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDesc:%s\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, sUid));
+                m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDesc:%s\n\tRecurs: %ld\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, lRecurCount, sUid));
             }
             else
                 m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: ERROR PARSING EVENT", ++nEventCount));
