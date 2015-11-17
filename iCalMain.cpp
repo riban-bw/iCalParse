@@ -321,7 +321,7 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
 void iCalFrame::ParseRecur(wxString& sRule)
 {
 	//Recur rule
-	wxStringTokenizer stParams(sRule(':'), ";");
+	wxStringTokenizer stParams(sRule, ";");
 	while(stParams.HasMoreTokens())
 	{
 		wxString sToken = stParams.GetNextToken();
@@ -368,5 +368,4 @@ void iCalFrame::ParseRecur(wxString& sRule)
 			//!@todo Implement
 		}
 	}
-}
 }

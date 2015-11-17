@@ -52,6 +52,13 @@ class iCalFrame: public wxFrame
         void OnMenuOpenSelected(wxCommandEvent& event);
         //*)
 
+        /** @brief  Parse recurring events
+        *   @param  sRule The recurring event rule
+        *   @todo   Return rule structure
+        */
+        void ParseRecur(wxString& sRule);
+
+
         //(*Identifiers(iCalFrame)
         static const long idLstLog;
         static const long idMenuOpen;
