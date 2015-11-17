@@ -293,7 +293,16 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
             }
             if(bSuccess)
             {
-                m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDesc:%s\n\tRecurs: %ld\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, lRecurCount, sUid));
+                wxString sResult = wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDesc:%s\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, sUid);
+                if(lRecurCount != 0)
+                {
+                    sResult += wxString::Format("\n\tRecurs: %ld", lRecurCount);
+                    if(nRecurFreq != RECUR_NONE)
+                        sResult += wxString::Format("\n\tRecur freq: %d", nRecurFreq);
+                    if(lRecurDays != 0)
+                        sResult += wxString::Format("\n\tRecur day: %ld", lRecurDays);
+                }
+                m_pLstLog->AppendAndEnsureVisible(sResult);
             }
             else
                 m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: ERROR PARSING EVENT", ++nEventCount));
