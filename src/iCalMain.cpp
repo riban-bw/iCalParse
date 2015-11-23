@@ -8,11 +8,11 @@
  **************************************************************/
 
 #include "iCalMain.h"
+#include "recurrule.h"
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
 #include <wx/textfile.h>
 #include <wx/log.h>
-#include <wx/tokenzr.h>
 
 //(*InternalHeaders(iCalFrame)
 #include <wx/intl.h>
@@ -164,62 +164,14 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
             wxDateTime dtStart((time_t)0);
             wxDateTime dtEnd((time_t)0);
             bool bSuccess = true; //true if event parsing succeeds
-            long lRecurCount = 0; //quantity of recurrances
-            long lRecurDays = 0; //bitwise flag of recurrance days
-            EVENT_RECUR_FREQ nRecurFreq = RECUR_NONE;
+            RecurRule* pRecur = NULL;
             while (!icsFile.Eof() && sLine != "END:VEVENT")
             {
                 sLine = icsFile.GetNextLine();
-                if(sLine.Left(5) == "RRULE")
+                if(sLine.Left(5) == "RRULE" && !pRecur)
                 {
-                    //Recur rule
-                    wxStringTokenizer stParams(sLine.AfterFirst(':'), ";");
-                    while(stParams.HasMoreTokens())
-                    {
-                        wxString sToken = stParams.GetNextToken();
-                        wxString sParam = sToken.BeforeFirst('=');
-                        wxString sValue = sToken.AfterFirst('=');
-                        if(sParam == "FREQ")
-                        {
-                            if(sValue == "DAILY")
-                                nRecurFreq = RECUR_DAILY;
-                            if(sValue == "WEEKLY")
-                                nRecurFreq = RECUR_WEEKLY;
-                            if(sValue == "MONTHLY")
-                                nRecurFreq = RECUR_MONTHLY;
-                            if(sValue == "YEARLY")
-                                nRecurFreq = RECUR_YEARLY;
-                        }
-                        else if(sParam == "COUNT")
-                        {
-                            sValue.ToLong(&lRecurCount);
-                        }
-                        else if(sParam == "BYDAY")
-                        {
-                            if(sValue.Contains("SU"))
-                                lRecurDays += 1;
-                            if(sValue.Contains("MO"))
-                                lRecurDays += 2;
-                            if(sValue.Contains("TU"))
-                                lRecurDays += 4;
-                            if(sValue.Contains("WE"))
-                                lRecurDays += 8;
-                            if(sValue.Contains("TH"))
-                                lRecurDays += 16;
-                            if(sValue.Contains("FR"))
-                                lRecurDays += 32;
-                            if(sValue.Contains("SA"))
-                                lRecurDays += 64;
-                        }
-                        else if(sParam == "BYMONTHDAY")
-                        {
-                            //!@todo Implement
-                        }
-                        else if(sParam == "BYMONTH")
-                        {
-                            //!@todo Implement
-                        }
-                    }
+                    //First recur rule (there should only be one)
+                    pRecur = new RecurRule(sLine.AfterFirst(':'));
                 }
                 if(sLine.Left(5) == "BEGIN")
                 {
@@ -297,19 +249,23 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
             }
             if(bSuccess)
             {
-                wxString sResult = wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDesc:%s\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, sUid);
-                if(lRecurCount != 0)
+                wxString sResult = wxString::Format("%d: %s - %s\n\t%s\n\tLocation: %s\n\tDescription:%s\n\tUID: %s", ++nEventCount, dtStart.FormatISOCombined(), dtEnd.FormatISOCombined(), sSummary, sLocation, sDescription, sUid);
+                if(pRecur && pRecur->IsValid())
                 {
-                    sResult += wxString::Format("\n\tRecurs: %ld", lRecurCount);
-                    if(nRecurFreq != RECUR_NONE)
-                        sResult += wxString::Format("\n\tRecur freq: %d", nRecurFreq);
-                    if(lRecurDays != 0)
-                        sResult += wxString::Format("\n\tRecur day: %ld", lRecurDays);
+                    sResult += wxString::Format("\n\tRecurs %d times", pRecur->GetCount());
+                    sResult += wxString::Format("\n\tRecur freq: %s", pRecur->GetFreqAsString());
+                    if(pRecur->GetDays() != RECUR_NONE)
+                        sResult += wxString::Format("\n\tRecur day: %s", pRecur->GetDaysAsString());
                 }
                 m_pLstLog->AppendAndEnsureVisible(sResult);
             }
             else
                 m_pLstLog->AppendAndEnsureVisible(wxString::Format("%d: ERROR PARSING EVENT", ++nEventCount));
+            if(pRecur)
+            {
+                delete pRecur;
+                pRecur = NULL;
+            }
         }
     }
 
@@ -318,54 +274,3 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
 
 }
 
-void iCalFrame::ParseRecur(wxString& sRule)
-{
-	//Recur rule
-	wxStringTokenizer stParams(sRule, ";");
-	while(stParams.HasMoreTokens())
-	{
-		wxString sToken = stParams.GetNextToken();
-		wxString sParam = sToken.BeforeFirst('=');
-		wxString sValue = sToken.AfterFirst('=');
-		if(sParam == "FREQ")
-		{
-			if(sValue == "DAILY")
-				nRecurFreq = RECUR_DAILY;
-			if(sValue == "WEEKLY")
-				nRecurFreq = RECUR_WEEKLY;
-			if(sValue == "MONTHLY")
-				nRecurFreq = RECUR_MONTHLY;
-			if(sValue == "YEARLY")
-				nRecurFreq = RECUR_YEARLY;
-		}
-		else if(sParam == "COUNT")
-		{
-			sValue.ToLong(&lRecurCount);
-		}
-		else if(sParam == "BYDAY")
-		{
-			if(sValue.Contains("SU"))
-				lRecurDays += 1;
-			if(sValue.Contains("MO"))
-				lRecurDays += 2;
-			if(sValue.Contains("TU"))
-				lRecurDays += 4;
-			if(sValue.Contains("WE"))
-				lRecurDays += 8;
-			if(sValue.Contains("TH"))
-				lRecurDays += 16;
-			if(sValue.Contains("FR"))
-				lRecurDays += 32;
-			if(sValue.Contains("SA"))
-				lRecurDays += 64;
-		}
-		else if(sParam == "BYMONTHDAY")
-		{
-			//!@todo Implement
-		}
-		else if(sParam == "BYMONTH")
-		{
-			//!@todo Implement
-		}
-	}
-}
