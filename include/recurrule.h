@@ -9,7 +9,9 @@
 
 #pragma once
 #include <wx/string.h>
+#include <wx/datetime.h>
 #include <stdint.h>
+#include <list>
 
 enum EVENT_RECUR_FREQ
 {
@@ -109,9 +111,23 @@ class RecurRule
     private:
         void Parse(); //Parse the rule
         EVENT_RECUR_FREQ m_nFreq; //Frequency of the rule [EVENT_RECUR_REQ]
-        unsigned int m_nCount; //Quantity of recurrences
+        unsigned int m_nCount; //Quantity of recurrences - may be truncated by scope of the calendar
         unsigned int m_nDays; //bitwise flag of recurrence days (0x01=Sun, 0x02=Tue)
         uint32_t m_nDaysOfMonth; //Bitwise flag of days of month [EVENT_RECUR_MONTH]
         unsigned int m_nMonths; //Bitwise flag of months (0x01=Jan)
-        wxString m_sRule;
+        unsigned int m_nInterval; //Interval between recurrences in multiples of m_nFreq
+        wxString m_sRule; //Raw rule passed to class
+        wxDateTime m_dtUntil; //Timestamp of last recurrence
+        std::list<unsigned int> m_listBySecond; //List of seconds of minute event occurs
+        std::list<unsigned int> m_listByMinute; //List of minutes of hour event occurs
+        std::list<unsigned int> m_listByHour; //List of hours of day event occurs
+        std::list<unsigned int> m_listByMonthDay; //List of days of month event occurs
+        std::list<unsigned int> m_listByYearDay; //List of days of year event occurs
+        std::list<unsigned int> m_listByWeekNo; //List of weeks of year event occurs
+
+        /*
+                       / ( "BYMONTH" "=" bymolist )
+                       / ( "BYSETPOS" "=" bysplist )
+                       / ( "WKST" "=" weekday )
+                       */
 };

@@ -6,8 +6,9 @@ RecurRule::RecurRule(wxString sRule) :
     m_nCount(0),
     m_nDays(0),
     m_nDaysOfMonth(0),
+    m_nMonths(0),
+    m_nInterval(1),
     m_sRule(sRule)
-
 {
     Parse();
 }
@@ -71,6 +72,67 @@ void RecurRule::Parse()
 		    sValue.ToLong(&lValue);
 		    m_nMonths |= (1 << lValue);
 		}
+		else if(sParam == "BYSECOND")
+        {
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listBySecond.push_back((unsigned int)lValue);
+            }
+        }
+		else if(sParam == "BYMINUTE")
+        {
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listByMinute.push_back((unsigned int)lValue);
+            }
+        }
+		else if(sParam == "BYHOUR")
+        {
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listByHour.push_back((unsigned int)lValue);
+            }
+        }
+		else if(sParam == "BYMONTHDAY")
+        {
+            //!@todo Handle +/- which indicates the Nth instance from start or end of month, e.g. -2TU is second Tuesday from end of month
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listByMonthDay.push_back((unsigned int)lValue);
+            }
+        }
+		else if(sParam == "BYYEARDAY")
+        {
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listByYearDay.push_back((unsigned int)lValue);
+            }
+        }
+		else if(sParam == "BYWEEKNO")
+        {
+            wxStringTokenizer stValues(sValue, ",");
+            long lValue;
+            while(stValues.HasMoreTokens())
+            {
+                if(stParams.GetNextToken().ToLong(&lValue))
+                    m_listByWeekNo.push_back((unsigned int)lValue);
+            }
+        }
 	}
 }
 

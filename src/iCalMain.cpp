@@ -198,6 +198,9 @@ void iCalFrame::OnMenuOpenSelected(wxCommandEvent& event)
                         case EVENT_UID:
                             sUid += sLine.Mid(2);
                             break;
+                        default:
+                            //!@todo Are any other lines continued?
+                            break;
                     }
                 }
                 else if(sLine.Left(7) == "SUMMARY")

@@ -14,6 +14,7 @@
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="include" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -24,6 +25,7 @@
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -37,10 +39,12 @@
 		<Linker>
 			<Add option="`wx-config --libs`" />
 		</Linker>
-		<Unit filename="iCalApp.cpp" />
-		<Unit filename="iCalApp.h" />
-		<Unit filename="iCalMain.cpp" />
-		<Unit filename="iCalMain.h" />
+		<Unit filename="include/iCalApp.h" />
+		<Unit filename="include/iCalMain.h" />
+		<Unit filename="include/recurrule.h" />
+		<Unit filename="src/iCalApp.cpp" />
+		<Unit filename="src/iCalMain.cpp" />
+		<Unit filename="src/recurrule.cpp" />
 		<Unit filename="wxsmith/iCalframe.wxs" />
 		<Extensions>
 			<envvars />
